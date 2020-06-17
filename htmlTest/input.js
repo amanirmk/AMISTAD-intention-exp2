@@ -1,0 +1,2 @@
+heroStates = ["idle", "idle", "idle", "attack", "attack", "attack", "attack", "dead", "dead", "dead"];
+adversaryStates = ["idle", "idle", "mad", "mad", "attack", "attack", "unknown", "unknown", "dead", "dea
