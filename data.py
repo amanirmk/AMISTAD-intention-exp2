@@ -4,8 +4,10 @@ import matplotlib.pyplot as plt
 import simulation as s
 import copy
 import seaborn as sb
+import shutil as sh
 
-jsFileName = "htmlTest.js"
+jsTemplateName = "htmlTest.js"
+newjsFileName = "script.js"
 
 defaultParams = {
         "p_d":0.1, 
@@ -14,6 +16,15 @@ defaultParams = {
         "p_c_h_u":0.2, 
         "cycle":3
     }
+
+paramLabels = {
+        "p_d":r"$P_d$",
+        "p_c_a":r"$P_{k,a}$",
+        "p_c_h":r"$P_{k,h}$",
+        "p_c_h_u":r"$P_{k,s}$",
+        "cycle":r"Cycle"
+    }
+
 
 def printProgressBar (iteration, total, prefix = 'Progress:', suffix = 'Complete', decimals = 1, length = 100, fill = '█', printEnd = "\r"):
     """
@@ -91,28 +102,30 @@ def runStatsFromDF(df, display=False):
     
     return [hero_stat, adv_stat]
 
-def runFromCSV(filename, run):
-    """THIS NO LONGER WORKS"""
-    #run is 0 indexed
+def getRunsFromCSV(filename, filterlist, k=1):
+    """returns first k runs that meet the list of parameters
+    runs = [(hero1 move list, adv1 move list), (hero2 move list, adv2 move list),...]"""
     data = pd.read_csv(filename)
+    data = filterDataFrame(data, filterlist)
+    data = data.head(k*2)
+    num = len(data.index)
     data = data.to_numpy()
-    hero = data[run*2,:].tolist()
-    adversary = data[run*2+1,:].tolist()
-    return (hero, adversary)
-
-def barFromCSV(filename):
-    df = pd.read_csv(filename)
-    ax = df[['hprob', 'aprob']].plot(kind='bar', title="Probability of Surviving", legend=True)
-    ax.set_xlabel("agents")
-    ax.set_ylabel("probability")
-    plt.show()
-    
+    heroMoves = []
+    adversaryMoves = []
+    for i in range(num):
+        if i % 2 == 0:
+            heroMoves.append(data[i].tolist())
+        else:
+            adversaryMoves.append(data[i].tolist())
+    runs = list(zip(heroMoves, adversaryMoves))
+    return runs 
 
 def heatMap(filename, param1, param2, calculatedParameters=[]):
     """calculated parameters is for variables that change but only in accordance to one of the input variables, 
     it is a list of [param_name, function to calculate, param input (1 or 2)]"""
-    data = pd.read_csv(filename)
+    plt.rc('font', family='serif')
 
+    data = pd.read_csv(filename)
     filterlist = []
     for dp in defaultParams:
         if dp not in [param1, param2] + [param for param, calc, arg in calculatedParameters]:
@@ -125,25 +138,26 @@ def heatMap(filename, param1, param2, calculatedParameters=[]):
     df3 = filterDataFrame(data, filterlist + [["hero_mode", 3]])
     df4 = filterDataFrame(data, filterlist + [["hero_mode", 4]])
     dfs = [df0, df1, df2, df3, df4]
-    modes = ["NEVER", "ALWAYS", "RANDOM", "RETALIATE", "INTENTION"]
+    
+    modes = [r"NEVER", r"ALWAYS", r"RANDOM", r"RETALIATE", r"INTENTION"]
 
+    plt.style.use('ggplot')
     fig, axes = plt.subplots(2,5)
     fig.tight_layout(w_pad=0, h_pad=1, rect=[0,0,0.9, 0.95])
     cbar_ax = fig.add_axes([.91,0.11,.03,0.77])
 
     axs = axes.flat
-
     for i in range(5):
         df = dfs[i]
         p1v = []
         p2v = []
         hero = []
         adv = []
+
         for val1, group1 in df.groupby(param1):
             tempdf = filterDataFrame(df, [[param1, val1]])
             for val2, group2 in tempdf.groupby(param2):
-                filters = [[param2, val2]]
-                
+                filters = [[param2, val2]]               
                 for param, calc, arg in calculatedParameters:
                     if arg == 1:
                         val = calc(val1)
@@ -158,27 +172,30 @@ def heatMap(filename, param1, param2, calculatedParameters=[]):
                     p2v.append(val2)
                     hero.append(hstats[0])
                     adv.append(astats[0])
+        
         hcols = list(zip(p1v, p2v, hero))
         acols = list(zip(p1v, p2v, adv))
         hdf = pd.DataFrame(hcols, columns=[param1, param2, "Hero Rates"])
         adf = pd.DataFrame(acols, columns=[param1, param2, "Adversary Rates"])
         hdata = hdf.pivot_table(index=param1, columns=param2, values="Hero Rates")
         adata = adf.pivot_table(index=param1, columns=param2, values="Adversary Rates")
-        bar = True
-        if i == 4:
-            bar = True
-        axs[i].set_title(modes[i] + " (Hero)")
-        axs[i+5].set_title(modes[i] + " (Adversary)")
-        sb.heatmap(hdata, ax=axs[i], vmin=0, vmax=100, cbar=bar, cbar_ax=cbar_ax)
-        sb.heatmap(adata, ax=axs[i+5], vmin=0, vmax=100, cbar=bar, cbar_ax=cbar_ax)
-    fig.suptitle("Effect of " + param1 + " and " + param2 + " on Survival Rates")
+        axs[i].set_title(modes[i] + r" (Hero)")
+        axs[i+5].set_title(modes[i] + r" (Adversary)")
+        sb.heatmap(hdata, ax=axs[i], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap='RdYlGn')
+        sb.heatmap(adata, ax=axs[i+5], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap='RdYlGn')
+    lbl1 = paramLabels[param1]
+    lbl2 = paramLabels[param2]
+    fig.suptitle("Effect of " + lbl1 + " and " + lbl2 + " on Survival Rates")
+    for ax in axs:
+        ax.set(xlabel=lbl1, ylabel=lbl2)
+    plt.rc('text', usetex=True)
     plt.show()
-
         
 
 def linearRunGraph(filename, param):
     data = pd.read_csv(filename)
-
+    plt.style.use('ggplot')
+    plt.rc('font', family='serif')
     filterlist = []
     for dp in defaultParams:
         if dp != param:
@@ -191,29 +208,46 @@ def linearRunGraph(filename, param):
     df3 = filterDataFrame(data, filterlist + [["hero_mode", 3]])
     df4 = filterDataFrame(data, filterlist + [["hero_mode", 4]])
     dfs = [df0, df1, df2, df3, df4]
-    modes = ["NEVER", "ALWAYS", "RANDOM", "RETALIATE", "INTENTION"]
+    modes = [r"NEVER", r"ALWAYS", r"RANDOM", r"RETALIATE", r"INTENTION"]
     
-    fig, axes = plt.subplots(3,2, sharex=True, gridspec_kw={'hspace': 0.3})
+    fig, axes = plt.subplots(2,3)
     axs = axes.flat
+    fig.tight_layout(rect=[0.05,0.05,0.95, 0.95])
 
+    colorIter = iter(['darkgreen', 'forestgreen', 'mediumseagreen','mediumaquamarine','turquoise'])
     for i in range(5):
         df = dfs[i]
         values = []
         hero = []
         adv = []
         for val, group in df.groupby(param):
-            hstats, astats = runStatsFromDF(group, True)
+            hstats, astats = runStatsFromDF(group, False)
             values.append(val)
             hero.append(hstats[0])
             adv.append(astats[0])
-        axs[i].plot(values, hero, label="Hero Rates", color='b')
-        axs[i].plot(values, adv, label="Adversary Rates", color='r')
+        color = next(colorIter)
+        if i == 0:
+            axs[i].plot(values, hero, label=r"Hero Rates", color='lime', linewidth=2)
+            axs[i].plot(values, adv, label=r"Adversary Rates", color='r', linewidth=2)
+        else:
+            axs[i].plot(values, hero, color='lime', linewidth=2)
+            axs[i].plot(values, adv, color='r', linewidth=2)
+        axs[5].plot(values, hero, label=r"Hero: " + modes[i], color=color, linewidth=2)
         axs[i].set_title(modes[i])
+        if i == 4:
+            fig.legend(prop={"size":12})
+    
+    lbl = paramLabels[param]
     for ax in axs:  
-        ax.set_xlabel(param + " value")
-        ax.set_ylabel("Survival Rates")
-    fig.legend(["Hero", "Adversary"])
-    fig.suptitle("Effect of " + param + " on Survival Rates")
+        ax.set(ylim=(0,101))
+        ax.set_xlabel(lbl + r" value")
+        ax.set_ylabel(r"Survival Rates")
+        ax.tick_params(axis='both', which='major', labelsize=9, direction='in')
+    axs[5].set_title(r"HERO COMPARISON")
+    #fig.legend([r"Hero", r"Adversary"])
+     #r"Hero: NEVER", r"Hero: ALWAYS", r"Hero: RANDOM", r"Hero: RETALIATE", r"Hero: Intention"])
+    fig.suptitle(r"Effect of " + lbl + r" on Survival Rates")
+    plt.rc('text', usetex=True)
     plt.show()
 
 
@@ -264,14 +298,50 @@ def runExp2(num_exp):
                 dataToCSV(filename, inputs, data, first)
                 first = False
 
+def visualizeRun(filename, filterlist, k=1, nth=0):
+    """Visualize a single run by writing its info to a js file, which can be run in browser
+    filename: name of csv to read from
+    filterlist: filters to apply 
+    k: number of runs to extract
+    nth: the nth run to visualize (out of the extracted runs)"""
+    # get run info
+    info = getRunsFromCSV(filename, filterlist, k)
+    runInfo = info[nth]
+    hasPerceptionString = str(runInfo[0][0] == 4).lower() # [0][0] is because runInfo is of the form [([heroStates], [adversaryStates])]
+    attackCycle = runInfo[0][5]
+    heroList = runInfo[0][7::] 
+    adversaryList = runInfo[1][7::]
+    # write to js file
+    writeTojs(hasPerceptionString, attackCycle, heroList, adversaryList)
+
+
+def writeTojs(hasPerceptionString, attackCycle, heroList, adversaryList):
+    """Appends a method to a js file that allows the js file to populate its arrays
+        with the character states."""
+    newFile = open(newjsFileName, "w") # create new file
+    newFile.close()
+    sh.copy(jsTemplateName, newjsFileName) # copy contents of template to new file
+    jsFile = open(newjsFileName, "a") # open the file to append to
+    jsFile.write("function getInput(){\n")
+    jsFile.write("hasPerception = " + hasPerceptionString + ";\n")
+    jsFile.write("attackCycle = " + str(attackCycle) + ";\n")
+    jsFile.write("heroStates = " + str(heroList) + ";\n")
+    jsFile.write("adversaryStates = " + str(adversaryList) + ";\n")
+    jsFile.write("}")
+    jsFile.close()
+"""
+[
+        ([hero2 move], [adversary2 move])
+]
+
 
 def appendTojs(numSims, csvFileName):
     [hasPerceptionArray, cycleNumArray, heroArray, adversaryArray] = getDataFromCSV(csvFileName)
     writeTojs(numSims, hasPerceptionArray, cycleNumArray, heroArray, adversaryArray)
 
 def getDataFromCSV(csvFileName):
-    """Reads from a CSV file. Returns two 2-d arrays. The first is the hero array, second is 
-    adversary array. Each row is one run, each column is one frame"""
+    Reads from a CSV file. Returns two 2-d arrays. The first is the hero array, second is 
+    adversary array. Each row is one run, each column is one frame
     dataFrame = pd.read_csv(csvFileName)
     array = dataFrame.to_numpy()
     
@@ -283,15 +353,18 @@ def getDataFromCSV(csvFileName):
     return [hasPerceptionArray, cycleNumArray, heroArray, adversaryArray]
 
 def writeTojs(numSims, hasPerceptionArray, cycleNumArray, heroArray, adversaryArray):
-    """Appends a method to a js file that allows the js file to populate its arrays
-        with the character states."""
-    jsFile = open(jsFileName, "a") # open file to append to
+    Appends a method to a js file that allows the js file to populate its arrays
+        with the character states.
+    newFile = open(newjsFileName, "w") # create new file
+    newFile.close()
+    sh.copy(jsTemplateName, newjsFileName) # copy contents of template to new file
+    jsFile = open(newjsFileName, "a") # open the file to append to
     jsFile.write("function getInput(){\n")
     #arrString = np.array2string(hasPerceptionArray, separator=", ")
     jsFile.write("hasPerceptionArray = " + np.array2string(hasPerceptionArray, separator=", ") + ";\n")
     jsFile.write("attackCycleArray = " + np.array2string(cycleNumArray, separator=", ") + ";\n")
     jsFile.write("heroStates = " + np.array2string(heroArray, separator=', ') + ";\n")
     jsFile.write("adversaryStates = " + np.array2string(adversaryArray, separator=', ') + ";\n")
-    jsFile.write("numSims = " + numSims + ";\n")
+    jsFile.write("numSims = " + str(numSims) + ";\n")
     jsFile.write("}")
-    jsFile.close()
+    jsFile.close() """
