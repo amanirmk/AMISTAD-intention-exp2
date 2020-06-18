@@ -1,0 +1,43 @@
+html, body{
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+
+/* set background image*/
+#background
+{
+	/*background-image: url('environment/environment.PNG');
+	height: 100%;
+	width: 100%;
+	background-size: cover;
+	background-repeat: none;
+	background: url('environment/environment.PNG') no-repeat center center fixed; 
+  	background-size: cover;
+  	background: url('environment/environment.PNG');*/
+  	background-repeat: none;
+  	width: 100%;
+  	position: absolute;
+  	top: 0;
+  	left: 0;
+}
+
+#hero
+{
+	position: absolute; /* make it stick to the background image */
+	width: 70%; /* make it smaller */
+	margin-right: 25%; /* position */
+	margin-left:0%;
+	margin-top: 30%
+}
+
+#adversary
+{
+	position: absolute; /* make it stick to the background image */
+	margin-left: 20%; /* position */
+	margin-right: 10%; 
+	margin-bottom: 20%;
+	margin-top: 10%;
+	width: 70%; /* make it smaller */
+}
