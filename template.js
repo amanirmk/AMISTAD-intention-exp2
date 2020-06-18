@@ -1,4 +1,4 @@
-/* template.js
+/* 
 Cynthia Hom
 Template for the js script for the animation!
 */
@@ -56,7 +56,7 @@ function draw(){
 	}, 1000/fps);
 
 	// only go up to a certain number of steps
-	if (step >= maxStep)
+	if (step > maxStep)
 	{
 		clearTimeout(timer);
 		step = 0;
@@ -91,11 +91,12 @@ function updateCharacters()
 	heroState = getHeroState(heroStates[step]);
 	console.log("hero state (string) is " + heroState);
 	adversaryState = getAdversaryState(adversaryStates[step]);
-	makeAnimation();// animate both 
+	//makeAnimation();// animate both 
 	if (heroState == "dead" || adversaryState == "dead")
 	{
 		step = maxStep;
 	}
+	makeAnimation();// animate both 
 }
 
 /** General function to make an animation run! 
@@ -158,4 +159,9 @@ function getAdversaryState(num)
 		return "mad";
 	}
 	return "idle";
-}
+}/*function getInput(){
+hasPerception = true;
+attackCycle = 3.0;
+heroStates = [19.0, 18.0, 17.0, 16.0, 15.0, 14.0, 2.0, 1.0, 0.0, 2.0];
+adversaryStates = [19.0, 18.0, 17.0, 16.0, 15.0, 2.0, 1.0, -5.0, 2.0, 1.0];
+}*/
