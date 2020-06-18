@@ -1,0 +1,28 @@
+html, body{
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+
+
+/* make all images cover the whole screen */
+img
+{
+  	background-repeat: none;
+  	width: 100%;
+  	position: absolute;
+  	top: 0;
+  	left: 0;
+}
+
+/* select the you survived/ you died images. Make them not visible until end of simulation */
+img.endingImage{
+	display: none;
+}
+
+img.endingImage.lastImage 
+{
+	display: block;
+}
+
+
