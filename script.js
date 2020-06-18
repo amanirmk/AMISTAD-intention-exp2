@@ -40,10 +40,9 @@ function init()
 	//endSim();
 }
 
-function endSim() // draw the end simulation screen
+function endSim() // draw the screen for when an agent dies
 {
 	gameOverImage.classList.add("gameOver"); // add to the class list
-	//gameOverImage.display = "inline";
 }
 
 /** Calls run() once every second.*/

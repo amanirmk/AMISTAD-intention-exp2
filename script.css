@@ -5,17 +5,9 @@ html, body{
 }
 
 
-/* set background image*/
-#background, #hero, #adversary
+/* make all images cover the whole screen */
+img
 {
-	/*background-image: url('environment/environment.PNG');
-	height: 100%;
-	width: 100%;
-	background-size: cover;
-	background-repeat: none;
-	background: url('environment/environment.PNG') no-repeat center center fixed; 
-  	background-size: cover;
-  	background: url('environment/environment.PNG');*/
   	background-repeat: none;
   	width: 100%;
   	position: absolute;
@@ -23,31 +15,15 @@ html, body{
   	left: 0;
 }
 
+/* select the dead image. Make it not visible until an agent dies
+(gameOver class is added when an agent dies) */
 img:nth-of-type(4){
 	display: none;
-	background-repeat: none;
-  	width: 100%;
-  	position: absolute;
-  	top: 0;
-  	left: 0;
 }
 
-img:nth-of-type(4).gameOver  
+img:nth-of-type(4).gameOver   
 {
-	/*position: absolute; /* make it stick to the background image */
-	/*margin-left: 20%; /* position */
-	/*margin-right: 10%; 
-	margin-bottom: 20%;
-	margin-top: 10%;
-	width: 70%;  /*make it smaller */
-	background-repeat: none;
-  	width: 100%;
-  	position: absolute;
-  	top: 0;
-  	left: 0;
 	display: block;
-	padding: 0px;
-	margin: 0px;
 }
 
 
