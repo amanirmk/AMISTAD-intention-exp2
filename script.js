@@ -1,20 +1,14 @@
 /* htmlTest.js
 Cynthia Hom
-Todo:
-- Need to figure out how to not show background image at first and then show it afterwards
-- Solution ideaS?
-	- use style.display = none
-	- use style.visibility = hidden
-	- important! allows the css to override things.
-- Otherwise, maybe finda  way to bring the normal backgorund image to the front instead????
+
+Note: for new images, we can simply make all elements use the background's style.
 */
 
 
 // get hero and adversary from the html, so we can change their images.
 var hero = document.getElementById("hero");
 var adversary = document.getElementById("adversary");
-var gameOverImage = document.querySelector("div");
-var background = document.getElementById("background");
+var gameOverImage = document.getElementById("gameEnd");
 var adversaryState = "";
 var heroState = "";
 
@@ -154,4 +148,9 @@ function getAdversaryState(num)
 		return "mad";
 	}
 	return "idle";
+}function getInput(){
+hasPerception = true;
+attackCycle = 3.0;
+heroStates = [19.0, 18.0, 17.0, 16.0, 15.0, 14.0, 2.0, 1.0, 0.0, 2.0];
+adversaryStates = [19.0, 18.0, 17.0, 16.0, 15.0, 2.0, 1.0, -30.0, -30.0, -30.0];
 }

@@ -6,7 +6,7 @@ html, body{
 
 
 /* set background image*/
-#background
+#background, #hero, #adversary
 {
 	/*background-image: url('environment/environment.PNG');
 	height: 100%;
@@ -22,12 +22,17 @@ html, body{
   	top: 0;
   	left: 0;
 }
-div
-{
+
+img:nth-of-type(4){
 	display: none;
+	background-repeat: none;
+  	width: 100%;
+  	position: absolute;
+  	top: 0;
+  	left: 0;
 }
 
-.gameOver
+img:nth-of-type(4).gameOver  
 {
 	/*position: absolute; /* make it stick to the background image */
 	/*margin-left: 20%; /* position */
@@ -35,31 +40,14 @@ div
 	margin-bottom: 20%;
 	margin-top: 10%;
 	width: 70%;  /*make it smaller */
-
 	background-repeat: none;
   	width: 100%;
   	position: absolute;
   	top: 0;
   	left: 0;
-	display: inline;
+	display: block;
+	padding: 0px;
+	margin: 0px;
 }
 
 
-#hero
-{
-	position: absolute; /* make it stick to the background image */
-	width: 70%; /* make it smaller */
-	margin-right: 25%; /* position */
-	margin-left:0%;
-	margin-top: 30%
-}
-
-#adversary
-{
-	position: absolute; /* make it stick to the background image */
-	margin-left: 20%; /* position */
-	margin-right: 10%; 
-	margin-bottom: 20%;
-	margin-top: 10%;
-	width: 70%; /* make it smaller */
-}
