@@ -6,7 +6,7 @@ import copy
 import seaborn as sb
 import shutil as sh
 
-jsTemplateName = "htmlTest.js"
+jsTemplateName = "template.js"
 newjsFileName = "script.js"
 
 defaultParams = {
@@ -50,7 +50,7 @@ def printProgressBar (iteration, total, prefix = 'Progress:', suffix = 'Complete
 
 def dataToCSV(filename, inputs, data, new=True):
     """writes the data to a csv, if not new, appends to given csv"""
-    runs, agents, steps = data.shape
+    runs, ___, steps = data.shape #___ = agents
     col_dict = copy.deepcopy(inputs)
     for key in col_dict:
         col_dict[key] = [col_dict[key]]*runs*2
@@ -123,72 +123,91 @@ def getRunsFromCSV(filename, filterlist, k=1):
 def heatMap(filename, param1, param2, calculatedParameters=[]):
     """calculated parameters is for variables that change but only in accordance to one of the input variables, 
     it is a list of [param_name, function to calculate, param input (1 or 2)]"""
-    plt.rc('font', family='serif')
-
+    
+    #load df
     data = pd.read_csv(filename)
+    
     filterlist = []
     for dp in defaultParams:
         if dp not in [param1, param2] + [param for param, calc, arg in calculatedParameters]:
             #hold all other variables constant at the defaults
             filterlist.append([dp, defaultParams[dp]])
     
-    df0 = filterDataFrame(data, filterlist + [["hero_mode", 0]])
-    df1 = filterDataFrame(data, filterlist + [["hero_mode", 1]])
-    df2 = filterDataFrame(data, filterlist + [["hero_mode", 2]])
-    df3 = filterDataFrame(data, filterlist + [["hero_mode", 3]])
-    df4 = filterDataFrame(data, filterlist + [["hero_mode", 4]])
-    dfs = [df0, df1, df2, df3, df4]
+    #filter dataframes according to the modes and collect in dfs
+    dfs = []
+    for i in range(5):
+        dfs.append(filterDataFrame(data, filterlist + [["hero_mode", i]]))
     
+    #define mode names (r prefix does latex)
     modes = [r"NEVER", r"ALWAYS", r"RANDOM", r"RETALIATE", r"INTENTION"]
 
+    #plot design
+    plt.rc('font', family='serif')
     plt.style.use('ggplot')
     fig, axes = plt.subplots(2,5)
     fig.tight_layout(w_pad=0, h_pad=1, rect=[0,0,0.9, 0.95])
     cbar_ax = fig.add_axes([.91,0.11,.03,0.77])
-
     axs = axes.flat
+
     for i in range(5):
         df = dfs[i]
-        p1v = []
-        p2v = []
-        hero = []
-        adv = []
+        p1v = [] # values for param 1
+        p2v = [] # values for param 2
+        hero = [] # survival values hero
+        adv = [] # survival values adversary
 
-        for val1, group1 in df.groupby(param1):
-            tempdf = filterDataFrame(df, [[param1, val1]])
-            for val2, group2 in tempdf.groupby(param2):
-                filters = [[param2, val2]]               
+        for val1, ___ in df.groupby(param1): #___ = group1
+            # filter for specific param 1 value
+            val1df = filterDataFrame(df, [[param1, val1]])
+
+            for val2, ___ in val1df.groupby(param2): #___ = group2
+                #add filter for specific param 2 value
+                filters = [[param2, val2]]            
+                #add filters for any additional calculated variables (ie p_c_h when doing (p_c_a and p_c_h) vs cycle)
                 for param, calc, arg in calculatedParameters:
                     if arg == 1:
                         val = calc(val1)
                     else:
                         val = calc(val2)
                     filters.append([param, val])
+                
+                #filter the df again
+                filtered_df = filterDataFrame(val1df, filters)
 
-                temptempdf = filterDataFrame(tempdf, filters)
-                if len(temptempdf.index) > 0:
-                    hstats, astats = runStatsFromDF(temptempdf, False)
+                if len(filtered_df.index) > 0:
+                    #if non-empty, collect survival statistics
+                    hstats, astats = runStatsFromDF(filtered_df, False)
                     p1v.append(val1)
                     p2v.append(val2)
                     hero.append(hstats[0])
                     adv.append(astats[0])
-        
+        #combine values together into points to plot
         hcols = list(zip(p1v, p2v, hero))
         acols = list(zip(p1v, p2v, adv))
         hdf = pd.DataFrame(hcols, columns=[param1, param2, "Hero Rates"])
         adf = pd.DataFrame(acols, columns=[param1, param2, "Adversary Rates"])
         hdata = hdf.pivot_table(index=param1, columns=param2, values="Hero Rates")
         adata = adf.pivot_table(index=param1, columns=param2, values="Adversary Rates")
+
+        #plot hero graph
         axs[i].set_title(modes[i] + r" (Hero)")
-        axs[i+5].set_title(modes[i] + r" (Adversary)")
         sb.heatmap(hdata, ax=axs[i], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap='RdYlGn')
+        #plot adv graph below
+        axs[i+5].set_title(modes[i] + r" (Adversary)")
         sb.heatmap(adata, ax=axs[i+5], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap='RdYlGn')
+    
+    #get latex labels from code parameters
     lbl1 = paramLabels[param1]
     lbl2 = paramLabels[param2]
+
+    #add title and labels
     fig.suptitle("Effect of " + lbl1 + " and " + lbl2 + " on Survival Rates")
     for ax in axs:
-        ax.set(xlabel=lbl1, ylabel=lbl2)
+        ax.set(xlabel=lbl2, ylabel=lbl1)
+    
+    #use latex (it complains when i do it earlier)
     plt.rc('text', usetex=True)
+    #show figure
     plt.show()
         
 
@@ -214,7 +233,7 @@ def linearRunGraph(filename, param):
     axs = axes.flat
     fig.tight_layout(rect=[0.05,0.05,0.95, 0.95])
 
-    colorIter = iter(['darkgreen', 'forestgreen', 'mediumseagreen','mediumaquamarine','turquoise'])
+    colorIter = iter(['#F3DF88', '#F2A172', '#4FADAC', '#5386A6', '#2F5373'])
     for i in range(5):
         df = dfs[i]
         values = []
@@ -225,17 +244,14 @@ def linearRunGraph(filename, param):
             values.append(val)
             hero.append(hstats[0])
             adv.append(astats[0])
-        color = next(colorIter)
         if i == 0:
-            axs[i].plot(values, hero, label=r"Hero Rates", color='lime', linewidth=2)
-            axs[i].plot(values, adv, label=r"Adversary Rates", color='r', linewidth=2)
+            axs[i].plot(values, hero, label=r"Hero Rates", color='#2F5373', linewidth=2)
+            axs[i].plot(values, adv, label=r"Adversary Rates", color='#F2A172', linewidth=2)
         else:
-            axs[i].plot(values, hero, color='lime', linewidth=2)
-            axs[i].plot(values, adv, color='r', linewidth=2)
-        axs[5].plot(values, hero, label=r"Hero: " + modes[i], color=color, linewidth=2)
+            axs[i].plot(values, hero, color='#2F5373', linewidth=2)
+            axs[i].plot(values, adv, color='#F2A172', linewidth=2)
+        axs[5].plot(values, hero, label=r"Hero: " + modes[i], color=next(colorIter), linewidth=2)
         axs[i].set_title(modes[i])
-        if i == 4:
-            fig.legend(prop={"size":12})
     
     lbl = paramLabels[param]
     for ax in axs:  
@@ -244,15 +260,15 @@ def linearRunGraph(filename, param):
         ax.set_ylabel(r"Survival Rates")
         ax.tick_params(axis='both', which='major', labelsize=9, direction='in')
     axs[5].set_title(r"HERO COMPARISON")
-    #fig.legend([r"Hero", r"Adversary"])
-     #r"Hero: NEVER", r"Hero: ALWAYS", r"Hero: RANDOM", r"Hero: RETALIATE", r"Hero: Intention"])
+    
+    axs[5].legend()
+    fig.legend([r"Hero", r"Adversary"], prop={"size":12})
     fig.suptitle(r"Effect of " + lbl + r" on Survival Rates")
     plt.rc('text', usetex=True)
     plt.show()
 
 
-def runExp2(num_exp):
-    filename = "exp2results.csv"
+def runExp2(filename, num_exp):
     first = True #im sorry
 
     #test all modes
@@ -329,6 +345,8 @@ def writeTojs(hasPerceptionString, attackCycle, heroList, adversaryList):
     jsFile.write("adversaryStates = " + str(adversaryList) + ";\n")
     jsFile.write("}")
     jsFile.close()
+
+
 """
 [
         ([hero2 move], [adversary2 move])
