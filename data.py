@@ -5,6 +5,7 @@ import simulation as s
 import copy
 import seaborn as sb
 import shutil as sh
+from matplotlib.colors import LinearSegmentedColormap
 
 jsTemplateName = "template.js"
 newjsFileName = "script.js"
@@ -77,7 +78,7 @@ def filterDataFrame(data, filterlist):
 
 def runStatsFromCSV(filename, filterlist=[], display=False):
     data = pd.read_csv(filename)
-    data = filterDataFrame(filterlist)
+    data = filterDataFrame(data, filterlist)
     return runStatsFromDF(data, display)
 
 def runStatsFromDF(df, display=False):
@@ -120,12 +121,12 @@ def getRunsFromCSV(filename, filterlist, k=1):
     runs = list(zip(heroMoves, adversaryMoves))
     return runs 
 
-def heatMap(filename, param1, param2, calculatedParameters=[]):
+def heatMap(data, param1, param2, calculatedParameters=[]):
     """calculated parameters is for variables that change but only in accordance to one of the input variables, 
     it is a list of [param_name, function to calculate, param input (1 or 2)]"""
     
     #load df
-    data = pd.read_csv(filename)
+    data = copy.deepcopy(data)
     
     filterlist = []
     for dp in defaultParams:
@@ -142,6 +143,14 @@ def heatMap(filename, param1, param2, calculatedParameters=[]):
     modes = [r"NEVER", r"ALWAYS", r"RANDOM", r"RETALIATE", r"INTENTION"]
 
     #plot design
+    red = (158, 26, 13)
+    grn = (104, 163, 132)
+    mix = (243, 223, 136)
+    colors = [  (red[0]/255., red[1]/255., red[2]/255.),
+            (mix[0]/255., mix[1]/255., mix[2]/255.),
+            (grn[0]/255., grn[1]/255., grn[2]/255.)]
+    cm = LinearSegmentedColormap.from_list(
+        'customized', colors, N=200)
     plt.rc('font', family='serif')
     plt.style.use('ggplot')
     fig, axes = plt.subplots(2,5)
@@ -191,12 +200,13 @@ def heatMap(filename, param1, param2, calculatedParameters=[]):
 
         #plot hero graph
         axs[i].set_title(modes[i] + r" (Hero)")
-        sb.heatmap(hdata, ax=axs[i], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap='RdYlGn')
+        sb.heatmap(hdata, ax=axs[i], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap=cm)
         #plot adv graph below
         axs[i+5].set_title(modes[i] + r" (Adversary)")
-        sb.heatmap(adata, ax=axs[i+5], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap='RdYlGn')
+        sb.heatmap(adata, ax=axs[i+5], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap=cm)
     
     #get latex labels from code parameters
+    #lbl1 = r"$P_k$"
     lbl1 = paramLabels[param1]
     lbl2 = paramLabels[param2]
 
@@ -211,8 +221,9 @@ def heatMap(filename, param1, param2, calculatedParameters=[]):
     plt.show()
         
 
-def linearRunGraph(filename, param):
-    data = pd.read_csv(filename)
+def linearRunGraph(data, param):
+
+    data = copy.deepcopy(data)
     plt.style.use('ggplot')
     plt.rc('font', family='serif')
     filterlist = []
