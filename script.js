@@ -1,30 +1,35 @@
-/* htmlTest.js
+/* 
 Cynthia Hom
+Template for the js script for the animation!
+Note: actual template name should be template.js. This is just called script.js
+so that it will run with hard coded inputs for testing PURPOSES ONLY
+Need to test on really large csv files 
 
-Note: for new images, we can simply make all elements use the background's style.
 */
 
 
 // get hero and adversary from the html, so we can change their images.
 var hero = document.getElementById("hero");
 var adversary = document.getElementById("adversary");
-var gameOverImage = document.getElementById("gameEnd");
+var youDiedImage = document.getElementById("youDied");
+var youSurvivedImage = document.getElementById("youSurvived");
+
+// current state in string
 var adversaryState = "";
 var heroState = "";
 
-
-// stuff for frames
+// for switching between states of agent
 var fps = 1; // one frame per second.
 var step = 0; 
 var maxStep = 9; // total number of steps to go is 10. (0 thru 9)
 
 // for individual state animations
-var fpsAnimation = 5;
+var fpsAnimation = 7;
 var stepAnimation = 1; // start at 1 because pics are labeled 1 thru 5
-var maxStepAnimation = 5;
+var maxStepAnimation = 7;
 
-// string input --> folder names for image animation!
-var heroStates = []; // fields to use later. Will contain states of heros and adversaries
+// fields that are updated by getInput method that is written to this file. 
+var heroStates = []; //  Will contain states of heros and adversaries
 var adversaryStates = [];
 var attackCycle = 0; // for both hero and adversary
 var hasPerception = false;
@@ -36,33 +41,45 @@ function init()
 {
 	getInput();
 	draw();
-	//gameOverImage.style.display = 'block';
-	//endSim();
 }
 
-function endSim() // draw the screen for when an agent dies
+// draw the screen for when an agent dies or survives!
+function showSurvived() 
 {
-	gameOverImage.classList.add("gameOver"); // add to the class list
+	console.log("showing survived screen");
+	youSurvivedImage.classList.add("lastImage"); // add to the class list
+}
+function showDied()
+{
+	console.log("showing died screen");
+	youDiedImage.classList.add("lastImage");
 }
 
 /** Calls run() once every second.*/
 function draw(){
 	timer = setTimeout(function(){
 		requestAnimationFrame(draw);  // call this every second
-	}, 1000/fps);
+	}, 1000/fps);//1000/fps); // account for rounding
 
 	// only go up to a certain number of steps
-	if (step >= maxStep)
+	if (step > maxStep)
 	{
 		clearTimeout(timer);
 		step = 0;
-		if (heroState == "dead" || adversaryState == "dead") // if either are dead, then put the image to say theya re dead.
+		// show ending screen!
+		/*if (heroState == "dead") 
 		{
-			endSim();
+			showDied();
+		}else {
+			showSurvived();
+		}*/
+		if (adversaryState == "dead") 
+		{
+			showSurvived();
 		}
 		return;
 	}
-
+	console.log("running a step");
 	run(step); 
 
 	step++;	// step through (1 to 10)
@@ -82,12 +99,35 @@ function updateCharacters()
 {
 	console.log("hero state is " + heroStates[step]);
 	heroState = getHeroState(heroStates[step]);
+	console.log("hero state (string) is " + heroState);
 	adversaryState = getAdversaryState(adversaryStates[step]);
-	makeAnimation();// animate both 
-	if (heroState == "dead" || adversaryState == "dead")
+	//makeAnimation();// animate both 
+	/*if (heroState == "dead" || adversaryState == "dead")
 	{
 		step = maxStep;
+		// this way the dead image for the hero will actually be shown right away
+			// (won't be hidden behind everything)
+		if (heroState == "dead"){
+			showDied();
+		}
+	}*/
+
+	if (heroState == "dead" || adversaryState == "dead")
+	{
+		//step = maxStep;
+		// this way the dead image for the hero will actually be shown right away
+			// (won't be hidden behind everything)
+		if (heroState == "dead"){
+			showDied();
+			makeAnimation();
+		}else{
+			makeAnimation();
+		}
+		step = maxStep;
+		return;
 	}
+	console.log("should not be here after surviavl/dying!");
+	makeAnimation();// animate both 
 }
 
 /** General function to make an animation run! 
@@ -109,14 +149,14 @@ function makeAnimation()
 		stepAnimation = 1;
 		return;
 	}
-
-	console.log("adversary" + adversaryState);
+	console.log("changing frame");
 	adversaryFolderName = "adversary" + adversaryState;
-	adversary.src = adversaryFolderName + "/" + adversaryFolderName + String(stepAnimation) + ".PNG";
-
 	heroFolderName = "hero" + heroState;
 	hero.src = heroFolderName + "/" + heroFolderName + String(stepAnimation) + ".PNG";
-	
+	adversary.src = adversaryFolderName + "/" + adversaryFolderName + String(stepAnimation) + ".PNG";
+	console.log("adversaryFileName is " + adversaryFolderName + String(stepAnimation));
+	console.log("heroFolderName is " + heroFolderName);
+
 	stepAnimation++;
 }
 
@@ -129,6 +169,8 @@ function getHeroState(num)
 		return "dead";
 	}else if (num == attackCycle - 1){ // attack at 2
 		return "attack";
+	}else if ((0 <= num) && (num < (attackCycle - 1))){ // prep to attack from 0 to 1
+		return "InAttackCycle";
 	}
 	return "idle";
 }
@@ -150,6 +192,11 @@ function getAdversaryState(num)
 }function getInput(){
 hasPerception = true;
 attackCycle = 3.0;
-heroStates = [19.0, 18.0, 17.0, 16.0, 15.0, 14.0, 2.0, 1.0, 0.0, 2.0];
-adversaryStates = [19.0, 18.0, 17.0, 16.0, 15.0, 2.0, 1.0, -30.0, -30.0, -30.0];
+/*heroStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, -2.0, -1.0, 0.0, 2.0];
+adversaryStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 1.0, -5.0, 2.0, 1.0]; // frame lag test*/
+/*heroStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 2.0, 1.0, 0.0, 2.0];
+adversaryStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 2.0, -5.0, 2.0, 1.0]; */// hero survives
+
+heroStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 2.0, 1.0, 0.0, 2.0];
+adversaryStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 2.0, -5.0, 2.0, 1.0];
 }
