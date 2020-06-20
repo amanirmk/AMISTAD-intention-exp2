@@ -7,8 +7,8 @@ import seaborn as sb
 import shutil as sh
 from matplotlib.colors import LinearSegmentedColormap
 
-jsTemplateName = "template.js"
-newjsFileName = "script.js"
+jsTemplateName = "animation/template.js"
+newjsFileName = "animation/script.js"
 
 defaultParams = {
         "p_d":0.1, 
@@ -250,18 +250,34 @@ def linearRunGraph(data, param):
         values = []
         hero = []
         adv = []
+        up_hci = []
+        low_hci = []
+        up_aci = []
+        low_aci = []
         for val, group in df.groupby(param):
             hstats, astats = runStatsFromDF(group, False)
             values.append(val)
-            hero.append(hstats[0])
-            adv.append(astats[0])
+            hmean, hci = hstats
+            amean, aci = astats
+            hero.append(hmean)
+            adv.append(amean)
+            up_hci.append(hmean+hci)
+            low_hci.append(hmean-hci)
+            up_aci.append(amean+aci)
+            low_aci.append(amean-aci)
         if i == 0:
             axs[i].plot(values, hero, label=r"Hero Rates", color='#2F5373', linewidth=2)
+            axs[i].fill_between(values, low_hci, up_hci, color='#2F5373', alpha=.15)
             axs[i].plot(values, adv, label=r"Adversary Rates", color='#F2A172', linewidth=2)
+            axs[i].fill_between(values, low_aci, up_aci, color='#F2A172', alpha=.15)
         else:
             axs[i].plot(values, hero, color='#2F5373', linewidth=2)
+            axs[i].fill_between(values, low_hci, up_hci, color='#2F5373', alpha=.15)
             axs[i].plot(values, adv, color='#F2A172', linewidth=2)
-        axs[5].plot(values, hero, label=r"Hero: " + modes[i], color=next(colorIter), linewidth=2)
+            axs[i].fill_between(values, low_aci, up_aci, color='#F2A172', alpha=.15)
+        color = next(colorIter)
+        axs[5].plot(values, hero, label=r"Hero: " + modes[i], color=color, linewidth=2)
+        axs[5].fill_between(values, low_hci, up_hci, color=color, alpha=.15)
         axs[i].set_title(modes[i])
     
     lbl = paramLabels[param]
