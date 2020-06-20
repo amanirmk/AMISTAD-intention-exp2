@@ -1,7 +1,6 @@
 /* 
 Cynthia Hom
-Template for the js script for the animation!
-Need to test on really large csv files 
+Newly redesigned animation!
 */
 
 
@@ -16,17 +15,16 @@ var adversaryState = "";
 var heroState = "";
 
 // for switching between states of agent
-var fps = 1; // one frame per second.
-var step = 0; 
-var maxStep = 9; // total number of steps to go is 10. (0 thru 9)
+var numStates = 10; // total number of steps to go is 10. (0 thru 9)
+var numAnimationSteps = 7;// frames per state (and also per second!)
+// for individual state animations 
+var totalFrames = numAnimationSteps * numStates;
+var frameNum = 0; // counter
+//var stepAnimation = 1; // start at 1 because pics are labeled 1 thru 5
 
-// for individual state animations
-var fpsAnimation = 7;
-var stepAnimation = 1; // start at 1 because pics are labeled 1 thru 5
-var maxStepAnimation = 7;
 
 // fields that are updated by getInput method that is written to this file. 
-var heroStates = []; //  Will contain states of heros and adversaries
+var heroStates = []; //  Will contain states of heros and adversaries (length 10)
 var adversaryStates = [];
 var attackCycle = 0; // for both hero and adversary
 var hasPerception = false;
@@ -56,105 +54,60 @@ function showDied()
 function draw(){
 	timer = setTimeout(function(){
 		requestAnimationFrame(draw);  // call this every second
-	}, 1000/fps);//1000/fps); // account for rounding
+	}, 1000/numAnimationSteps);// repaint 7 times a second
 
 	// only go up to a certain number of steps
-	if (step > maxStep)
+	if (frameNum >= totalFrames)
 	{
 		clearTimeout(timer);
 		step = 0;
-		// show ending screen!
-		/*if (heroState == "dead") 
-		{
-			showDied();
-		}else {
-			showSurvived();
-		}*/
+		
+		// if hero survived say that hero survived!
 		if (heroState != "dead") 
 		{
 			showSurvived();
 		}
 		return;
 	}
-	console.log("running a step");
-	run(step); 
+	console.log("frameNum is " + frameNum);
+	updateCharacters();
 
-	step++;	// step through (1 to 10)
+	frameNum++;	// step through (1 to 10)
 }
-
-
-function run()
-{
-	console.log("step is " + step);
-	// get input
-	updateCharacters(step);
-}
-
 
 
 function updateCharacters()
 {
-	console.log("hero state is " + heroStates[step]);
-	heroState = getHeroState(heroStates[step]);
-	console.log("hero state (string) is " + heroState);
-	adversaryState = getAdversaryState(adversaryStates[step]);
-	//makeAnimation();// animate both 
-	/*if (heroState == "dead" || adversaryState == "dead")
-	{
-		step = maxStep;
-		// this way the dead image for the hero will actually be shown right away
-			// (won't be hidden behind everything)
-		if (heroState == "dead"){
-			showDied();
-		}
-	}*/
+	stateNum = Math.floor((frameNum)/numAnimationSteps); // 0 through 9. 
+	animationNum = frameNum % numAnimationSteps + 1; // from 1 to 7. add 1 because otherwise we would get 0 through 6.
 
-	if (heroState == "dead" || adversaryState == "dead")
+	heroState = getHeroState(heroStates[stateNum]);
+	adversaryState = getAdversaryState(adversaryStates[stateNum]);
+
+	// make the animation stop if either are dead
+	if ((heroState == "dead" || adversaryState == "dead") && animationNum == 1) // only do this the first time they die, otherwise + 7 wont work.
 	{
-		//step = maxStep;
 		// this way the dead image for the hero will actually be shown right away
 			// (won't be hidden behind everything)
 		if (heroState == "dead"){
 			showDied();
-			makeAnimation();
-		}else{
-			makeAnimation();
 		}
-		step = maxStep;
+		renderFrame(animationNum);
+		totalFrames = frameNum + numAnimationSteps; // make animation stop after these next 7 frames.
 		return;
 	}
-	console.log("should not be here after surviavl/dying!");
-	makeAnimation();// animate both 
+	renderFrame(animationNum);// update both photos
 }
 
-/** General function to make an animation run! 
-@param the folder name of the images in the animation. Folder
-MUST contain exactly 5 images, with names consisting of the folder name and the
-numbers 1 through 5
-Each frame is a second, so these animations have 1/5 of a second each, i.e 1000/5 milliseconds
-*/
-function makeAnimation()
+// update one frame!
+function renderFrame(animationNum)
 {
-	animationTimer = setTimeout(function(){
-		requestAnimationFrame(makeAnimation);  // call this every second
-	}, 1000/fpsAnimation);
-
-	// only go up to a certain number of steps
-	if (stepAnimation > maxStepAnimation)
-	{
-		clearTimeout(animationTimer);
-		stepAnimation = 1;
-		return;
-	}
-	console.log("changing frame");
 	adversaryFolderName = "adversary" + adversaryState;
 	heroFolderName = "hero" + heroState;
-	hero.src = heroFolderName + "/" + heroFolderName + String(stepAnimation) + ".PNG";
-	adversary.src = adversaryFolderName + "/" + adversaryFolderName + String(stepAnimation) + ".PNG";
-	console.log("adversaryFileName is " + adversaryFolderName + String(stepAnimation));
-	console.log("heroFolderName is " + heroFolderName);
-
-	stepAnimation++;
+	hero.src = heroFolderName + "/" + heroFolderName + String(animationNum) + ".PNG";
+	adversary.src = adversaryFolderName + "/" + adversaryFolderName + String(animationNum) + ".PNG";
+	console.log("adversaryFileName is " + adversaryFolderName + String(animationNum));
+	console.log("heroFileName is " + heroFolderName + String(animationNum));
 }
 
 
