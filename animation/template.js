@@ -70,7 +70,7 @@ function draw(){
 		}else {
 			showSurvived();
 		}*/
-		if (adversaryState == "dead") 
+		if (heroState != "dead") 
 		{
 			showSurvived();
 		}
