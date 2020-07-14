@@ -296,7 +296,7 @@ def linearRunGraph(data, param):
 
 
 def runExp2(filename, num_exp):
-    first = True #im sorry
+    first = True 
 
     #test all modes
     for hero_mode in range(5):        
