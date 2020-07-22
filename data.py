@@ -240,11 +240,15 @@ def linearRunGraph(data, param):
     dfs = [df0, df1, df2, df3, df4]
     modes = [r"NEVER", r"ALWAYS", r"RANDOM", r"RETALIATE", r"INTENTION"]
     
-    fig, axes = plt.subplots(2,3)
-    axs = axes.flat
-    fig.tight_layout(rect=[0.05,0.05,0.95, 0.95])
+    figs = []
+    for i in range(6):
+        figs.append(plt.figure(figsize=(5,5)))
+    #fig, axes = plt.subplots(2,3)
+    #axs = axes.flat
+    #fig.tight_layout(rect=[0.05,0.05,0.95, 0.95])
 
     colorIter = iter(['#F3DF88', '#F2A172', '#4FADAC', '#5386A6', '#2F5373'])
+
     for i in range(5):
         df = dfs[i]
         values = []
@@ -265,38 +269,81 @@ def linearRunGraph(data, param):
             low_hci.append(hmean-hci)
             up_aci.append(amean+aci)
             low_aci.append(amean-aci)
-        if i == 0:
-            axs[i].plot(values, hero, label=r"Hero Rates", color='#2F5373', linewidth=2)
-            axs[i].fill_between(values, low_hci, up_hci, color='#2F5373', alpha=.15)
-            axs[i].plot(values, adv, label=r"Adversary Rates", color='#F2A172', linewidth=2)
-            axs[i].fill_between(values, low_aci, up_aci, color='#F2A172', alpha=.15)
-        else:
-            axs[i].plot(values, hero, color='#2F5373', linewidth=2)
-            axs[i].fill_between(values, low_hci, up_hci, color='#2F5373', alpha=.15)
-            axs[i].plot(values, adv, color='#F2A172', linewidth=2)
-            axs[i].fill_between(values, low_aci, up_aci, color='#F2A172', alpha=.15)
+        figs[i].gca().plot(values, hero, label="Hero", color='#2F5373', linewidth=2)
+        figs[i].gca().fill_between(values, low_hci, up_hci, color='#2F5373', alpha=.15)
+        figs[i].gca().plot(values, adv, label="Adversary", color='#F2A172', linewidth=2)
+        figs[i].gca().fill_between(values, low_aci, up_aci, color='#F2A172', alpha=.15)
+        figs[i].gca().legend(prop={"size":12})
         color = next(colorIter)
-        axs[5].plot(values, hero, label=r"Hero: " + modes[i], color=color, linewidth=2)
-        axs[5].fill_between(values, low_hci, up_hci, color=color, alpha=.15)
-        axs[i].set_title(modes[i])
+        figs[5].gca().plot(values, hero, label=r"Hero: " + modes[i], color=color, linewidth=2)
+        figs[5].gca().fill_between(values, low_hci, up_hci, color=color, alpha=.15)
+        figs[i].gca().set_title(modes[i])
     
+    figs[5].gca().legend(prop={"size":12})
     lbl = paramLabels[param]
-    for ax in axs:  
-        ax.set(ylim=(0,101))
-        ax.set_xlabel(lbl + r" value")
-        ax.set_ylabel(r"Survival Rates")
-        ax.tick_params(axis='both', which='major', labelsize=9, direction='in')
-    axs[5].set_title(r"HERO COMPARISON")
+    for fig in figs:  
+        fig.gca().set(ylim=(0,101))
+        fig.gca().set_xlabel(lbl + r" value")
+        fig.gca().set_ylabel(r"Survival Rates")
+        fig.gca().tick_params(axis='both', which='major', labelsize=9, direction='in')
+    figs[5].gca().set_title(r"HERO COMPARISON")
     
-    axs[5].legend()
-    fig.legend([r"Hero", r"Adversary"], prop={"size":12})
-    fig.suptitle(r"Effect of " + lbl + r" on Survival Rates")
+    #fig.suptitle(r"Effect of " + lbl + r" on Survival Rates")
     plt.rc('text', usetex=True)
     plt.show()
 
 
+def probIntentionAttack(filename, param):
+    data = pd.read_csv(filename)
+    filterlist = []
+    for dp in defaultParams:
+        if dp != param:
+            #hold all other variables constant and the defaults
+            filterlist.append([dp, defaultParams[dp]])
+    filterlist.append(["hero_mode", 4])
+    data = filterDataFrame(data, filterlist)
+    for val, group in data.groupby(param):
+        print(val)
+        groupSteps = 0
+        groupAttacks = 0
+        for index, hero in group.iterrows():
+            step = 0
+            hasAttacked = False
+            cycle = hero["cycle"]
+            while hasAttacked == False and step < 10:
+                step += 1 #can't make any moves on 0th step, doesn't count
+                hasAttacked = hero["step " + str(step)] < cycle
+            groupAttacks += hasAttacked
+            groupSteps += step
+        print(groupAttacks, groupSteps)
+        print(groupAttacks / groupSteps)
+        print()
+
+
+pra = {
+    "0.05" : 0.04695709361945706,
+    "0.1" : 0.09265246573484506,
+    "0.15" : 0.13701122556672976,
+    "0.2" : 0.1786621024104978,
+}
+
+def runCautious(filename, num_exp):
+    first = True
+    for hero_mode in [2,4,5]:
+        for p_d in range(5, 20+1, 5):
+            p_d /= 100
+            if hero_mode == 5:
+                real_mode = 2
+                p_r_a = pra[str(p_d)]
+                inputs, data = s.simulate(real_mode, num_exp, probDetect=p_d, probRandAttack=p_r_a)
+                inputs["hero_mode"] = 5
+            else:
+                inputs, data = s.simulate(hero_mode, num_exp, probDetect=p_d)
+            dataToCSV(filename, inputs, data, first)
+            first = False
+
 def runExp2(filename, num_exp):
-    first = True 
+    first = True #im sorry
 
     #test all modes
     for hero_mode in range(5):        
@@ -372,3 +419,44 @@ def writeTojs(hasPerceptionString, attackCycle, heroList, adversaryList):
     jsFile.write("adversaryStates = " + str(adversaryList) + ";\n")
     jsFile.write("}")
     jsFile.close()
+
+
+"""
+[
+        ([hero2 move], [adversary2 move])
+]
+
+
+def appendTojs(numSims, csvFileName):
+    [hasPerceptionArray, cycleNumArray, heroArray, adversaryArray] = getDataFromCSV(csvFileName)
+    writeTojs(numSims, hasPerceptionArray, cycleNumArray, heroArray, adversaryArray)
+
+def getDataFromCSV(csvFileName):
+    Reads from a CSV file. Returns two 2-d arrays. The first is the hero array, second is 
+    adversary array. Each row is one run, each column is one frame
+    dataFrame = pd.read_csv(csvFileName)
+    array = dataFrame.to_numpy()
+    
+    # if this run has perception turned on
+    hasPerceptionArray= array[::2, 0] # get every other element in the first column
+    cycleNumArray = array[::2, 5] # every other element in 5th column 
+    heroArray = array[::2, 7::] # every other row. Heros are first. frame 0 is at 7th column.
+    adversaryArray = array[1::2, 7::]
+    return [hasPerceptionArray, cycleNumArray, heroArray, adversaryArray]
+
+def writeTojs(numSims, hasPerceptionArray, cycleNumArray, heroArray, adversaryArray):
+    Appends a method to a js file that allows the js file to populate its arrays
+        with the character states.
+    newFile = open(newjsFileName, "w") # create new file
+    newFile.close()
+    sh.copy(jsTemplateName, newjsFileName) # copy contents of template to new file
+    jsFile = open(newjsFileName, "a") # open the file to append to
+    jsFile.write("function getInput(){\n")
+    #arrString = np.array2string(hasPerceptionArray, separator=", ")
+    jsFile.write("hasPerceptionArray = " + np.array2string(hasPerceptionArray, separator=", ") + ";\n")
+    jsFile.write("attackCycleArray = " + np.array2string(cycleNumArray, separator=", ") + ";\n")
+    jsFile.write("heroStates = " + np.array2string(heroArray, separator=', ') + ";\n")
+    jsFile.write("adversaryStates = " + np.array2string(adversaryArray, separator=', ') + ";\n")
+    jsFile.write("numSims = " + str(numSims) + ";\n")
+    jsFile.write("}")
+    jsFile.close() """
