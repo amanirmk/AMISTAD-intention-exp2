@@ -424,4 +424,3 @@ def writeTojs(hasPerceptionString, attackCycle, heroList, adversaryList):
     jsFile.write("}")
     jsFile.close()
 
-
