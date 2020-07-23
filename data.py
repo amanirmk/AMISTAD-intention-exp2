@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import simulation as s
 import copy
@@ -222,9 +223,15 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
         
 
 def linearRunGraph(data, param):
+    print("graph started")
+    labelsize = 18
+    legendsize = 14
+    titlesize = 20
+    ticksize = 16
 
     data = copy.deepcopy(data)
     plt.style.use('ggplot')
+    plt.rc('text', usetex=True)
     plt.rc('font', family='serif')
     filterlist = []
     for dp in defaultParams:
@@ -238,14 +245,11 @@ def linearRunGraph(data, param):
     df3 = filterDataFrame(data, filterlist + [["hero_mode", 3]])
     df4 = filterDataFrame(data, filterlist + [["hero_mode", 4]])
     dfs = [df0, df1, df2, df3, df4]
-    modes = [r"NEVER", r"ALWAYS", r"RANDOM", r"RETALIATE", r"INTENTION"]
+    modes = [r"NEVER", r"ALWAYS", r"RANDOM", r"RETALIATE", r"INTENTION", r"COMPARISON"]
     
     figs = []
     for i in range(6):
         figs.append(plt.figure(figsize=(5,5)))
-    #fig, axes = plt.subplots(2,3)
-    #axs = axes.flat
-    #fig.tight_layout(rect=[0.05,0.05,0.95, 0.95])
 
     colorIter = iter(['#F3DF88', '#F2A172', '#4FADAC', '#5386A6', '#2F5373'])
 
@@ -273,24 +277,24 @@ def linearRunGraph(data, param):
         figs[i].gca().fill_between(values, low_hci, up_hci, color='#2F5373', alpha=.15)
         figs[i].gca().plot(values, adv, label="Adversary", color='#F2A172', linewidth=2)
         figs[i].gca().fill_between(values, low_aci, up_aci, color='#F2A172', alpha=.15)
-        figs[i].gca().legend(prop={"size":12})
+        figs[i].gca().legend(prop={"size":legendsize})
         color = next(colorIter)
         figs[5].gca().plot(values, hero, label=r"Hero: " + modes[i], color=color, linewidth=2)
         figs[5].gca().fill_between(values, low_hci, up_hci, color=color, alpha=.15)
-        figs[i].gca().set_title(modes[i])
+        figs[i].gca().set_title(modes[i], fontsize=titlesize, fontweight='bold')
     
-    figs[5].gca().legend(prop={"size":12})
+    figs[5].gca().set_title(r"HERO COMPARISON", fontsize=titlesize, fontweight='bold')
+    figs[5].gca().legend(prop={"size":legendsize})
     lbl = paramLabels[param]
-    for fig in figs:  
+    for i in range(len(figs)): 
+        fig = figs[i] 
         fig.gca().set(ylim=(0,101))
-        fig.gca().set_xlabel(lbl + r" value")
-        fig.gca().set_ylabel(r"Survival Rates")
-        fig.gca().tick_params(axis='both', which='major', labelsize=9, direction='in')
-    figs[5].gca().set_title(r"HERO COMPARISON")
-    
-    #fig.suptitle(r"Effect of " + lbl + r" on Survival Rates")
-    plt.rc('text', usetex=True)
-    plt.show()
+        fig.gca().set_xlabel(lbl + r" value", fontsize=labelsize, fontweight='bold')
+        fig.gca().set_ylabel(r"Survival Rates", fontsize=labelsize, fontweight='bold')
+        fig.gca().tick_params(axis='both', which='major', labelsize=ticksize, direction='in')
+        fig.tight_layout()
+        fig.savefig(param + modes[i], bbox_inches='tight', pad_inches=0)
+    plt.close('all')
 
 
 def probIntentionAttack(filename, param):
@@ -421,42 +425,3 @@ def writeTojs(hasPerceptionString, attackCycle, heroList, adversaryList):
     jsFile.close()
 
 
-"""
-[
-        ([hero2 move], [adversary2 move])
-]
-
-
-def appendTojs(numSims, csvFileName):
-    [hasPerceptionArray, cycleNumArray, heroArray, adversaryArray] = getDataFromCSV(csvFileName)
-    writeTojs(numSims, hasPerceptionArray, cycleNumArray, heroArray, adversaryArray)
-
-def getDataFromCSV(csvFileName):
-    Reads from a CSV file. Returns two 2-d arrays. The first is the hero array, second is 
-    adversary array. Each row is one run, each column is one frame
-    dataFrame = pd.read_csv(csvFileName)
-    array = dataFrame.to_numpy()
-    
-    # if this run has perception turned on
-    hasPerceptionArray= array[::2, 0] # get every other element in the first column
-    cycleNumArray = array[::2, 5] # every other element in 5th column 
-    heroArray = array[::2, 7::] # every other row. Heros are first. frame 0 is at 7th column.
-    adversaryArray = array[1::2, 7::]
-    return [hasPerceptionArray, cycleNumArray, heroArray, adversaryArray]
-
-def writeTojs(numSims, hasPerceptionArray, cycleNumArray, heroArray, adversaryArray):
-    Appends a method to a js file that allows the js file to populate its arrays
-        with the character states.
-    newFile = open(newjsFileName, "w") # create new file
-    newFile.close()
-    sh.copy(jsTemplateName, newjsFileName) # copy contents of template to new file
-    jsFile = open(newjsFileName, "a") # open the file to append to
-    jsFile.write("function getInput(){\n")
-    #arrString = np.array2string(hasPerceptionArray, separator=", ")
-    jsFile.write("hasPerceptionArray = " + np.array2string(hasPerceptionArray, separator=", ") + ";\n")
-    jsFile.write("attackCycleArray = " + np.array2string(cycleNumArray, separator=", ") + ";\n")
-    jsFile.write("heroStates = " + np.array2string(heroArray, separator=', ') + ";\n")
-    jsFile.write("adversaryStates = " + np.array2string(adversaryArray, separator=', ') + ";\n")
-    jsFile.write("numSims = " + str(numSims) + ";\n")
-    jsFile.write("}")
-    jsFile.close() """
