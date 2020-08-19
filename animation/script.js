@@ -139,14 +139,11 @@ function getAdversaryState(num)
 		return "mad";
 	}
 	return "idle";
-}function getInput(){
+}
+
+function getInput(){
 hasPerception = true;
 attackCycle = 3.0;
-/*heroStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, -2.0, -1.0, 0.0, 2.0];
-adversaryStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 1.0, -5.0, 2.0, 1.0]; // frame lag test*/
-/*heroStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 2.0, 1.0, 0.0, 2.0];
-adversaryStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 2.0, -5.0, 2.0, 1.0]; */// hero survives
-
 heroStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 2.0, 1.0, 0.0, 2.0];
 adversaryStates = [19.0, 18.0, 17.0, 2.0, 1.0, 0.0, 2.0, -1.0, 0.0, 2.0];
 }
