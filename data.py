@@ -207,7 +207,6 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
         sb.heatmap(adata, ax=axs[i+5], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap=cm)
     
     #get latex labels from code parameters
-    #lbl1 = r"$P_k$"
     lbl1 = paramLabels[param1]
     lbl2 = paramLabels[param2]
 
@@ -216,14 +215,11 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
     for ax in axs:
         ax.set(xlabel=lbl2, ylabel=lbl1)
     
-    #use latex (it complains when i do it earlier)
     plt.rc('text', usetex=True)
-    #show figure
     plt.show()
         
 
 def linearRunGraph(data, param):
-    print("graph started")
     labelsize = 18
     legendsize = 14
     titlesize = 20
@@ -347,28 +343,21 @@ def runCautious(filename, num_exp):
             first = False
 
 def runExp2(filename, num_exp):
-    first = True #im sorry
-
+    first = True
     #test all modes
     for hero_mode in range(5):        
-        print("HERO MODE", hero_mode)
-        print(0)
         #linear test of prob detection
         for p_d in range(5, 20+1, 5):
             p_d /= 100
             inputs, data = s.simulate(hero_mode, num_exp, probDetect=p_d)
             dataToCSV(filename, inputs, data, first)
             first = False
-
-        print(1) 
         #linear test of additional crit boost
         for p_c_h_u in range(0, 50+1, 5):
             p_c_h_u /= 100
             inputs, data = s.simulate(hero_mode, num_exp, probSurpriseCrit=p_c_h_u)
             dataToCSV(filename, inputs, data, first)
             first = False
-
-        print(2)
         #co-vary crit with cycle 
         #(normal "linear" cycle is when p_c_a = 0.7)
         for cycle in range(1, 10+1, 1):
@@ -379,8 +368,6 @@ def runExp2(filename, num_exp):
                 inputs, data = s.simulate(hero_mode, num_exp, probAdversaryCrit=p_c_a, probHeroCrit=p_c_h, cycle=cycle)
                 dataToCSV(filename, inputs, data, first)
                 first = False
-
-        print(3)
         #co-vary p_c_a and p_c_h
         #(normal "linear" p_c_a is when p_c_h = 0.5)
         #(normal "linear" p_c_h is when p_c_a = 0.7)
