@@ -1,3 +1,8 @@
+/** 
+ * script.css
+ * Stylesheet for the AMISTAD-intention-exp2 animation.
+ */
+
 html, body{
 	height: 100%;
 	margin: 0;
@@ -24,5 +29,3 @@ img.endingImage.lastImage
 {
 	display: block;
 }
-
-

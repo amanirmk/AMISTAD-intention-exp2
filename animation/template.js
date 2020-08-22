@@ -1,48 +1,53 @@
 /* 
-Cynthia Hom
-Newly redesigned animation!
-*/
+ * template.js
+ *
+ * This file is used to generate an animation from csv data. 
+ * To do so, run the visualizeRun() method in the data.py python file. 
+ * visualizeRun() will then create a file called script.js with the desired data.
+ * 
+ * To see an example animation, simply use the already generated script.js file that 
+ * is preloaded with example data.
+ * 
+ * @summary Template script for the AMISTAD-intention-exp2 animation.
+ */
 
 
-// get hero and adversary from the html, so we can change their images.
-var hero = document.getElementById("hero");
+var hero = document.getElementById("hero"); // Hero and adversary image elements
 var adversary = document.getElementById("adversary");
 var youDiedImage = document.getElementById("youDied");
 var youSurvivedImage = document.getElementById("youSurvived");
 
-// current state in string
-var adversaryState = "";
+var adversaryState = ""; // Current states
 var heroState = "";
 
-// for switching between states of agent
-var numStates = 10; // total number of steps to go is 10. (0 thru 9)
-var numAnimationSteps = 7;// frames per state (and also per second!)
-// for individual state animations 
+var numStates = 10; // Number of states per animation
+var numAnimationSteps = 7; // Number of steps per state
 var totalFrames = numAnimationSteps * numStates;
-var frameNum = 0; // counter
-//var stepAnimation = 1; // start at 1 because pics are labeled 1 thru 5
+var frameNum = 0; // Current frame of the animation
 
-
-// fields that are updated by getInput method that is written to this file. 
-var heroStates = []; //  Will contain states of heros and adversaries (length 10)
+var heroStates = []; // These variables are set by getInput().
 var adversaryStates = [];
-var attackCycle = 0; // for both hero and adversary
+var attackCycle = 0; 
 var hasPerception = false;
 
 init();
 
-/** Called when file is run */
+/** 
+ * Called when file is run 
+ */
 function init() 
 {
 	getInput();
 	draw();
 }
 
-// draw the screen for when an agent dies or survives!
+/**
+ * Displays the ending screens when an agent dies or survives
+ */
 function showSurvived() 
 {
 	console.log("showing survived screen");
-	youSurvivedImage.classList.add("lastImage"); // add to the class list
+	youSurvivedImage.classList.add("lastImage");
 }
 function showDied()
 {
@@ -50,82 +55,99 @@ function showDied()
 	youDiedImage.classList.add("lastImage");
 }
 
-/** Calls run() once every second.*/
+/** 
+ * Calls run() once every second. 
+ * Stops once either the maximum framecount is reached, or an agent dies.
+ */
 function draw(){
 	timer = setTimeout(function(){
-		requestAnimationFrame(draw);  // call this every second
-	}, 1000/numAnimationSteps);// repaint 7 times a second
+		requestAnimationFrame(draw);
+	}, 1000/numAnimationSteps); // Repaints 7 times a second
 
-	// only go up to a certain number of steps
+	// Only go up to a certain number of frames
 	if (frameNum >= totalFrames)
 	{
 		clearTimeout(timer);
 		step = 0;
 		
-		// if hero survived say that hero survived!
+		// If hero survived show that hero survived
 		if (heroState != "dead") 
 		{
 			showSurvived();
 		}
 		return;
 	}
-	console.log("frameNum is " + frameNum);
+	console.log("Frame " + frameNum);
 	updateCharacters();
 
-	frameNum++;	// step through (1 to 10)
+	frameNum++;	// Step through frames (1 through 10)
 }
 
-
+/** 
+ * Determines the state of the adversary and hero in the current frame and 
+ * updates their images accordingly. 
+ * Also stops the animation when agents die.
+ */
 function updateCharacters()
 {
-	stateNum = Math.floor((frameNum)/numAnimationSteps); // 0 through 9. 
-	animationNum = frameNum % numAnimationSteps + 1; // from 1 to 7. add 1 because otherwise we would get 0 through 6.
+	stateNum = Math.floor((frameNum)/numAnimationSteps); // Generate random number from 0 through 9. 
+	animationNum = frameNum % numAnimationSteps + 1; // animationNum goes from 1 to 7. Add 1 because otherwise we would get 0 through 6.
 
 	heroState = getHeroState(heroStates[stateNum]);
 	adversaryState = getAdversaryState(adversaryStates[stateNum]);
 
-	// make the animation stop if either are dead
-	if ((heroState == "dead" || adversaryState == "dead") && animationNum == 1) // only do this the first time they die, otherwise + 7 wont work.
+	// Stop the animation if either hero or adversary are dead
+	if ((heroState == "dead" || adversaryState == "dead") && animationNum == 1) // Only do this the first time they die.
 	{
-		// this way the dead image for the hero will actually be shown right away
-			// (won't be hidden behind everything)
-		if (heroState == "dead"){
+		if (heroState == "dead"){ // Show the "died" image right away.
 			showDied();
 		}
 		renderFrame(animationNum);
-		totalFrames = frameNum + numAnimationSteps; // make animation stop after these next 7 frames.
+		totalFrames = frameNum + numAnimationSteps; // Stop animation after the next 7 frames.
 		return;
 	}
-	renderFrame(animationNum);// update both photos
+	renderFrame(animationNum); // Update both photos
 }
 
-// update one frame!
+/** 
+ * Displays a single frame of the animation.
+ * @param {Number} animationNum The frame of the current animation. Range: 1 to 7.
+ */
 function renderFrame(animationNum)
 {
 	adversaryFolderName = "adversary" + adversaryState;
 	heroFolderName = "hero" + heroState;
 	hero.src = heroFolderName + "/" + heroFolderName + String(animationNum) + ".PNG";
 	adversary.src = adversaryFolderName + "/" + adversaryFolderName + String(animationNum) + ".PNG";
-	console.log("adversaryFileName is " + adversaryFolderName + String(animationNum));
-	console.log("heroFileName is " + heroFolderName + String(animationNum));
 }
 
 
-//---------------- interpreting input -------------------
-/** getHeroState(): state number --> state string.*/
+/** 
+ * Takes in a hero state number and converts it to a hero state string. 
+ * This is necessary because the csv holds states as numbers, while the 
+ * image file names use state strings.
+ * @param  {Number} num The hero state number.
+ * @return {String} 	The hero state string.
+ */
 function getHeroState(num)
 {
-	if (num < 0) {		// dead if negative number 
-		return "dead";
-	}else if (num == attackCycle - 1){ // attack at 2
+	if (num < 0) {	
+		return "dead"; // Heroes are dead if their state is a negative number 
+	}else if (num == attackCycle - 1){ 
 		return "attack";
-	}else if ((0 <= num) && (num < (attackCycle - 1))){ // prep to attack from 0 to 1
+	}else if ((0 <= num) && (num < (attackCycle - 1))){ 
 		return "InAttackCycle";
 	}
 	return "idle";
 }
 
-/** getAdversaryState(): state number --> state string.*/
+/** 
+ * Takes in an adversary state number and converts it to an adversary state string. 
+ * This is necessary because the csv holds states as numbers, while the 
+ * image file names use state strings.
+ * @param  {Number} num The adversary state number.
+ * @return {String} 	The adversary state string.
+ */
 function getAdversaryState(num)
 {
 	if (num < 0) {
