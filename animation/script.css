@@ -5,7 +5,7 @@ html, body{
 }
 
 
-/* make all images cover the whole screen */
+/* Make all images cover the whole screen */
 img
 {
   	background-repeat: none;
@@ -15,7 +15,7 @@ img
   	left: 0;
 }
 
-/* select the you survived/ you died images. Make them not visible until end of simulation */
+/* Select the you survived/you died images. Make them invisible until end of simulation */
 img.endingImage{
 	display: none;
 }
