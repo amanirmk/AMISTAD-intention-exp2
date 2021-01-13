@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import simulation as s
 import copy
@@ -52,7 +51,7 @@ def printProgressBar (iteration, total, prefix = 'Progress:', suffix = 'Complete
 
 def dataToCSV(filename, inputs, data, new=True):
     """writes the data to a csv, if not new, appends to given csv"""
-    runs, ___, steps = data.shape #___ = agents
+    runs, _, steps = data.shape # _ = agents
     col_dict = copy.deepcopy(inputs)
     for key in col_dict:
         col_dict[key] = [col_dict[key]]*runs*2
@@ -131,7 +130,7 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
     
     filterlist = []
     for dp in defaultParams:
-        if dp not in [param1, param2] + [param for param, calc, arg in calculatedParameters]:
+        if dp not in [param1, param2] + [param for param, _, _ in calculatedParameters]:
             #hold all other variables constant at the defaults
             filterlist.append([dp, defaultParams[dp]])
     
@@ -154,7 +153,7 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
         'customized', colors, N=200)
     plt.rc('font', family='serif')
     plt.style.use('ggplot')
-    fig, axes = plt.subplots(2,5)
+    fig, axes = plt.subplots(2,5, figsize=(9,5))
     fig.tight_layout(w_pad=0, h_pad=1, rect=[0,0,0.9, 0.95])
     cbar_ax = fig.add_axes([.91,0.11,.03,0.77])
     axs = axes.flat
@@ -166,11 +165,11 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
         hero = [] # survival values hero
         adv = [] # survival values adversary
 
-        for val1, ___ in df.groupby(param1): #___ = group1
+        for val1, _ in df.groupby(param1): # _ = group1
             # filter for specific param 1 value
             val1df = filterDataFrame(df, [[param1, val1]])
 
-            for val2, ___ in val1df.groupby(param2): #___ = group2
+            for val2, _ in val1df.groupby(param2): # _ = group2
                 #add filter for specific param 2 value
                 filters = [[param2, val2]]            
                 #add filters for any additional calculated variables (ie p_c_h when doing (p_c_a and p_c_h) vs cycle)
@@ -198,12 +197,11 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
         adf = pd.DataFrame(acols, columns=[param1, param2, "Adversary Rates"])
         hdata = hdf.pivot_table(index=param1, columns=param2, values="Hero Rates")
         adata = adf.pivot_table(index=param1, columns=param2, values="Adversary Rates")
-
         #plot hero graph
-        axs[i].set_title(modes[i] + r" (Hero)")
+        axs[i].set_title(modes[i] + r" (Hero)", fontsize=6)
         sb.heatmap(hdata, ax=axs[i], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap=cm)
         #plot adv graph below
-        axs[i+5].set_title(modes[i] + r" (Adversary)")
+        axs[i+5].set_title(modes[i] + r" (Adversary)", fontsize=6)
         sb.heatmap(adata, ax=axs[i+5], vmin=0, vmax=100, cbar_ax=cbar_ax, cmap=cm)
     
     #get latex labels from code parameters
@@ -211,12 +209,18 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
     lbl2 = paramLabels[param2]
 
     #add title and labels
-    fig.suptitle("Effect of " + lbl1 + " and " + lbl2 + " on Survival Rates")
+    fig.suptitle("Effect of " + lbl1 + " and " + lbl2 + " on Survival Rates", fontsize=8, fontweight='bold')
     for ax in axs:
-        ax.set(xlabel=lbl2, ylabel=lbl1)
+        ax.set_xlabel(lbl2, fontsize=8)
+        ax.set_ylabel(lbl1, fontsize=8)
+        ax.tick_params(labelsize=6)
+        ax.invert_yaxis()
+
+    plt.subplots_adjust(hspace=0.4, wspace=0.5, top=0.89)
     
     plt.rc('text', usetex=True)
-    plt.show()
+    plt.savefig(param1 + '_v_' + param2 + '.pdf', bbox_inches='tight', pad_inches=0.1)
+    plt.close('all')
         
 
 def linearRunGraph(data, param):
@@ -248,7 +252,7 @@ def linearRunGraph(data, param):
         figs.append(plt.figure(figsize=(5,5)))
 
     colorIter = iter(['#F3DF88', '#F2A172', '#4FADAC', '#5386A6', '#2F5373'])
-
+    
     for i in range(5):
         df = dfs[i]
         values = []
@@ -289,7 +293,7 @@ def linearRunGraph(data, param):
         fig.gca().set_ylabel(r"Survival Rates", fontsize=labelsize, fontweight='bold')
         fig.gca().tick_params(axis='both', which='major', labelsize=ticksize, direction='in')
         fig.tight_layout()
-        fig.savefig(param + modes[i], bbox_inches='tight', pad_inches=0)
+        fig.savefig(param + modes[i] + '.pdf', bbox_inches='tight', pad_inches=0)
     plt.close('all')
 
 
@@ -306,7 +310,7 @@ def probIntentionAttack(filename, param):
         print(val)
         groupSteps = 0
         groupAttacks = 0
-        for index, hero in group.iterrows():
+        for _, hero in group.iterrows():
             step = 0
             hasAttacked = False
             cycle = hero["cycle"]
