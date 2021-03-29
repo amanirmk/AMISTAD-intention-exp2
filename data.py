@@ -151,7 +151,7 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
             (grn[0]/255., grn[1]/255., grn[2]/255.)]
     cm = LinearSegmentedColormap.from_list(
         'customized', colors, N=200)
-    plt.rc('font', family='serif')
+    plt.rc('font', family='sans-serif')
     plt.style.use('ggplot')
     fig, axes = plt.subplots(2,5, figsize=(9,5))
     fig.tight_layout(w_pad=0, h_pad=1, rect=[0,0,0.9, 0.95])
@@ -178,6 +178,7 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
                         val = calc(val1)
                     else:
                         val = calc(val2)
+                    val = round(val, 1)
                     filters.append([param, val])
                 
                 #filter the df again
@@ -217,9 +218,69 @@ def heatMap(data, param1, param2, calculatedParameters=[]):
         ax.invert_yaxis()
 
     plt.subplots_adjust(hspace=0.4, wspace=0.5, top=0.89)
-    
     plt.rc('text', usetex=True)
+
     plt.savefig(param1 + '_v_' + param2 + '.pdf', bbox_inches='tight', pad_inches=0.1)
+    plt.close('all')
+
+def linearCautious(data, param):
+    labelsize = 18
+    legendsize = 14
+    titlesize = 20
+    ticksize = 16
+
+    data = copy.deepcopy(data)
+    plt.style.use('ggplot')
+    plt.rc('text', usetex=True)
+    plt.rc('font', family='sans-serif')
+    filterlist = []
+    for dp in defaultParams:
+        if dp != param:
+            #hold all other variables constant and the defaults
+            filterlist.append([dp, defaultParams[dp]])
+    
+    cautious = filterDataFrame(data, filterlist + [["hero_mode", 5]])
+    random = filterDataFrame(data, filterlist + [["hero_mode", 2]])
+    intention = filterDataFrame(data, filterlist + [["hero_mode", 4]])
+    dfs = [cautious, random, intention]
+    modes = [r"CAUTIOUS", r"RANDOM", r"INTENTION", r"COMPARISON"]
+    
+    fig = plt.figure(figsize=(5,5))
+
+    colors = ['#F2A172', '#4FADAC', '#2F5373']
+    
+    for i in range(3):
+        df = dfs[i]
+        values = []
+        hero = []
+        adv = []
+        up_hci = []
+        low_hci = []
+        up_aci = []
+        low_aci = []
+        for val, group in df.groupby(param):
+            hstats, astats = runStatsFromDF(group, False)
+            values.append(val)
+            hmean, hci = hstats
+            amean, aci = astats
+            hero.append(hmean)
+            adv.append(amean)
+            up_hci.append(hmean+hci)
+            low_hci.append(hmean-hci)
+            up_aci.append(amean+aci)
+            low_aci.append(amean-aci)
+        fig.gca().plot(values, hero, label=r"Hero: " + modes[i], color=colors[i], linewidth=2)
+        fig.gca().fill_between(values, low_hci, up_hci, color=colors[i], alpha=.15)
+    
+    fig.gca().set_title(r"HERO COMPARISON", fontsize=titlesize, fontweight='bold')
+    fig.gca().legend(["CAUTIOUS", "RANDOM", "INTENTION"], prop={"size":legendsize}, facecolor="white", edgecolor="black")
+    lbl = paramLabels[param]
+    fig.gca().set(ylim=(0,101))
+    fig.gca().set_xlabel(lbl + r" value", fontsize=labelsize, fontweight='bold')
+    fig.gca().set_ylabel(r"Survival Rates", fontsize=labelsize, fontweight='bold')
+    fig.gca().tick_params(axis='both', which='major', labelsize=ticksize, direction='in')
+    fig.tight_layout()
+    fig.savefig('p_dCAUTIOUS.pdf', bbox_inches='tight', pad_inches=0)
     plt.close('all')
         
 
@@ -232,7 +293,7 @@ def linearRunGraph(data, param):
     data = copy.deepcopy(data)
     plt.style.use('ggplot')
     plt.rc('text', usetex=True)
-    plt.rc('font', family='serif')
+    plt.rc('font', family='sans-serif')
     filterlist = []
     for dp in defaultParams:
         if dp != param:
@@ -277,14 +338,14 @@ def linearRunGraph(data, param):
         figs[i].gca().fill_between(values, low_hci, up_hci, color='#2F5373', alpha=.15)
         figs[i].gca().plot(values, adv, label="Adversary", color='#F2A172', linewidth=2)
         figs[i].gca().fill_between(values, low_aci, up_aci, color='#F2A172', alpha=.15)
-        figs[i].gca().legend(prop={"size":legendsize})
+        figs[i].gca().legend(prop={"size":legendsize}, facecolor="white", edgecolor="black")
         color = next(colorIter)
         figs[5].gca().plot(values, hero, label=r"Hero: " + modes[i], color=color, linewidth=2)
         figs[5].gca().fill_between(values, low_hci, up_hci, color=color, alpha=.15)
         figs[i].gca().set_title(modes[i], fontsize=titlesize, fontweight='bold')
     
     figs[5].gca().set_title(r"HERO COMPARISON", fontsize=titlesize, fontweight='bold')
-    figs[5].gca().legend(prop={"size":legendsize})
+    figs[5].gca().legend(prop={"size":legendsize}, facecolor="white", edgecolor="black")
     lbl = paramLabels[param]
     for i in range(len(figs)): 
         fig = figs[i] 
